@@ -498,4 +498,17 @@ public class AllAppsContainerView extends BaseContainerView implements DragSourc
             }
         }
     }
+
+  public void setStatusBarHeight(float height) {
+        mAllAppsBackground.setStatusBarHeight(height);
+    }
+
+    @Override
+    public void setRevealDrawableColor(int color) {
+        mAllAppsBackground.setBackgroundColor(color);
+    }
+
+    public void setWallpaperTranslation(float translation) {
+        mAllAppsBackground.setWallpaperTranslation(translation);
+    }
 }

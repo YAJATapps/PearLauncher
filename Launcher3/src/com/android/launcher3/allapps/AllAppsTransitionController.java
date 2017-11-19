@@ -26,6 +26,7 @@ import com.android.launcher3.userevent.nano.LauncherLogProto.Action;
 import com.android.launcher3.userevent.nano.LauncherLogProto.ContainerType;
 import com.android.launcher3.util.Themes;
 import com.android.launcher3.util.TouchController;
+import com.android.launcher3.blur.BlurWallpaperProvider;
 
 /**
  * Handles AllApps view transition.
@@ -260,7 +261,11 @@ public class AllAppsTransitionController implements TouchController, VerticalPul
         // Use a light status bar (dark icons) if all apps is behind at least half of the status
         // bar. If the status bar is already light due to wallpaper extraction, keep it that way.
         boolean forceLight = shift <= mStatusBarHeight / 2;
+if (Utilities.ATLEAST_MARSHMALLOW) {
         mLauncher.activateLightSystemBars(forceLight, true /* statusBar */, true /* navBar */);
+ } else {
+            mAppsView.setStatusBarHeight((BlurWallpaperProvider.isEnabled() ? 0 : Math.max(mStatusBarHeight - shift, 0)));
+        }
     }
 
     /**
@@ -271,16 +276,25 @@ public class AllAppsTransitionController implements TouchController, VerticalPul
         mProgress = progress;
         float shiftCurrent = progress * mShiftRange;
 
-        float workspaceHotseatAlpha = Utilities.boundToRange(progress, 0f, 1f);
-        float alpha = 1 - workspaceHotseatAlpha;
-        float interpolation = mAccelInterpolator.getInterpolation(workspaceHotseatAlpha);
+        float alpha = 1 - progress;
+        float interpolation = mAccelInterpolator.getInterpolation(progress);
 
-        int color = (Integer) mEvaluator.evaluate(mDecelInterpolator.getInterpolation(alpha),
-                mHotseatBackgroundColor, mAllAppsBackgroundColor);
-        int bgAlpha = Color.alpha((int) mEvaluator.evaluate(alpha,
-                mHotseatBackgroundColor, mAllAppsBackgroundColor));
+        int allAppsAlpha = 20;
+        int allAppsBgBlur = mAllAppsBackgroundColor + (allAppsAlpha << 24);
 
-        mAppsView.setRevealDrawableColor(ColorUtils.setAlphaComponent(color, bgAlpha));
+        boolean blurEnabled = BlurWallpaperProvider.isEnabled();
+
+      
+        int color = (int) mEvaluator.evaluate(
+                mDecelInterpolator.getInterpolation(alpha), mHotseatBackgroundColor,
+                blurEnabled && blurAllapps ? allAppsBgBlur : mAllAppsBackgroundColor);
+        mAppsView.setRevealDrawableColor(color);
+
+        if (blurEnabled && blurAllapps) {
+            mAppsView.setWallpaperTranslation(shiftCurrent);
+            mHotseat.setWallpaperTranslation(shiftCurrent);
+        }
+
         mAppsView.getContentView().setAlpha(alpha);
         mAppsView.setTranslationY(shiftCurrent);
 

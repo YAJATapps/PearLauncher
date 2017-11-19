@@ -334,6 +334,8 @@ public class Launcher extends BaseActivity
     }
 
     private RotationPrefChangeHandler mRotationPrefChangeHandler;
+  private BlurWallpaperProvider mBlurWallpaperProvider;
+   private LauncherTab mLauncherTab;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -380,6 +382,7 @@ public class Launcher extends BaseActivity
         mAccessibilityDelegate = new LauncherAccessibilityDelegate(this);
 
         mDragController = new DragController(this);
+ mBlurWallpaperProvider = new BlurWallpaperProvider(this);
         mAllAppsController = new AllAppsTransitionController(this);
         mStateTransitionAnimation = new LauncherStateTransitionAnimation(this, mAllAppsController);
 
@@ -434,6 +437,7 @@ public class Launcher extends BaseActivity
         mDefaultKeySsb = new SpannableStringBuilder();
         Selection.setSelection(mDefaultKeySsb, 0);
 
+        mLauncherTab = new LauncherTab(this);
         mRotationEnabled = getResources().getBoolean(R.bool.allow_rotation);
         // In case we are on a device with locked rotation, we should look at preferences to check
         // if the user has specifically allowed rotation.
@@ -474,6 +478,19 @@ public class Launcher extends BaseActivity
             mAppWidgetHost.startListening();
         }
     }
+
+ public ILauncherClient getClient() {
+        return mLauncherTab.getClient();
+    }
+
+    public boolean isClientConnected() {
+        return mLauncherTab.getClient().isConnected();
+    }
+
+    public BlurWallpaperProvider getBlurWallpaperProvider() {
+        return mBlurWallpaperProvider;
+    }
+
 
     private void loadExtractedColorsAndColorItems() {
         // TODO: do this in pre-N as well, once the extraction part is complete.
@@ -933,6 +950,7 @@ public class Launcher extends BaseActivity
             mAppWidgetHost.stopListening();
         }
 
+        mLauncherTab.getClient().onStop();
         NotificationListener.removeNotificationsChangedListener();
     }
 
@@ -948,6 +966,7 @@ public class Launcher extends BaseActivity
         if (Utilities.ATLEAST_NOUGAT_MR1) {
             mAppWidgetHost.startListening();
         }
+        mLauncherTab.getClient().onStart();
 
         if (!isWorkspaceLoading()) {
             NotificationListener.setNotificationsChangedListener(mPopupDataProvider);
@@ -1063,8 +1082,14 @@ public class Launcher extends BaseActivity
             mAllAppsController.showDiscoveryBounce();
         }
         mIsResumeFromActionScreenOff = false;
+    mLauncherTab.getClient().onResume();
         if (mLauncherCallbacks != null) {
             mLauncherCallbacks.onResume();
+        }
+
+ if (updateWallpaper) {
+            updateWallpaper = false;
+            mBlurWallpaperProvider.updateAsync();
         }
 
     }
@@ -1084,6 +1109,8 @@ public class Launcher extends BaseActivity
         if (mWorkspace.getCustomContentCallbacks() != null) {
             mWorkspace.getCustomContentCallbacks().onHide();
         }
+
+   mLauncherTab.getClient().onPause();
 
         if (mLauncherCallbacks != null) {
             mLauncherCallbacks.onPause();
@@ -1599,6 +1626,7 @@ public class Launcher extends BaseActivity
         FirstFrameAnimatorHelper.initializeDrawListener(getWindow().getDecorView());
         mAttached = true;
 
+        mLauncherTab.getClient().onAttachedToWindow();
         if (mLauncherCallbacks != null) {
             mLauncherCallbacks.onAttachedToWindow();
         }
@@ -1611,6 +1639,8 @@ public class Launcher extends BaseActivity
             unregisterReceiver(mReceiver);
             mAttached = false;
         }
+
+     mLauncherTab.getClient().onDetachedFromWindow();
 
         if (mLauncherCallbacks != null) {
             mLauncherCallbacks.onDetachedFromWindow();
@@ -1775,6 +1805,8 @@ public class Launcher extends BaseActivity
                 mWidgetsView.scrollToTop();
             }
 
+ mLauncherTab.getClient().hideOverlay(true);
+
             if (mLauncherCallbacks != null) {
                 mLauncherCallbacks.onHomeIntent();
             }
@@ -1880,6 +1912,7 @@ public class Launcher extends BaseActivity
 
         LauncherAnimUtils.onDestroyActivity();
 
+        mLauncherTab.getClient().onDestroy();
         if (mLauncherCallbacks != null) {
             mLauncherCallbacks.onDestroy();
         }

@@ -137,9 +137,11 @@ public class DragController implements DragDriver.EventListener, TouchController
             android.os.Debug.startMethodTracing("Launcher");
         }
 
+try{
         // Hide soft keyboard, if visible
         mLauncher.getSystemService(InputMethodManager.class)
                 .hideSoftInputFromWindow(mWindowToken, 0);
+ } catch (Exception e) { }
 
         mOptions = options;
         if (mOptions.systemDndStartPoint != null) {

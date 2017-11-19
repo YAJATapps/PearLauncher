@@ -21,10 +21,12 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ShortcutInfo;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.UserHandle;
 
 import com.android.launcher3.ItemInfo;
+import com.android.launcher3.Utilities;
 import com.android.launcher3.compat.UserManagerCompat;
 
 /**
@@ -36,6 +38,17 @@ import com.android.launcher3.compat.UserManagerCompat;
 public class ShortcutInfoCompat {
     private static final String INTENT_CATEGORY = "com.android.launcher3.DEEP_SHORTCUT";
     public static final String EXTRA_SHORTCUT_ID = "shortcut_id";
+    private String packageName;
+    private String id;
+    private CharSequence shortLabel;
+    private CharSequence longLabel;
+    private ComponentName activity;
+    private Intent launchIntent;
+    private UserHandle userHandle;
+    private int rank;
+    private boolean enabled;
+    private CharSequence disabledMessage;
+    private Drawable icon;
 
     private ShortcutInfo mShortcutInfo;
 
@@ -43,13 +56,36 @@ public class ShortcutInfoCompat {
         mShortcutInfo = shortcutInfo;
     }
 
-    @TargetApi(Build.VERSION_CODES.N)
-    public Intent makeIntent() {
-        return new Intent(Intent.ACTION_MAIN)
+    public ShortcutInfoCompat(String packageName, String id, CharSequence shortLabel, CharSequence longLabel,
+                              ComponentName activity, Intent launchIntent, UserHandle userHandle, int rank, boolean enabled, CharSequence disabledMessage, Drawable icon) {
+        this.packageName = packageName;
+        this.id = id;
+        this.shortLabel = shortLabel;
+        this.longLabel = longLabel;
+        this.activity = activity;
+        this.launchIntent = launchIntent;
+        this.userHandle = userHandle;
+        this.rank = rank;
+        this.enabled = enabled;
+        this.disabledMessage = disabledMessage;
+        this.icon = icon;
+    }
+
+    public Intent makeIntent(Context context) {
+        long serialNumber = UserManagerCompat.getInstance(context)
+                .getSerialNumberForUser(getUserHandle());
+        Intent intent;
+        if (useNative()) {
+            intent = new Intent(Intent.ACTION_MAIN);
+            intent.setComponent(mShortcutInfo.getActivity());
+        } else {
+            intent = launchIntent;
+        }
+        return intent
                 .addCategory(INTENT_CATEGORY)
-                .setComponent(getActivity())
                 .setPackage(getPackage())
                 .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+                .putExtra(ItemInfo.EXTRA_PROFILE, serialNumber)
                 .putExtra(EXTRA_SHORTCUT_ID, getId());
     }
 
@@ -58,63 +94,131 @@ public class ShortcutInfoCompat {
     }
 
     public String getPackage() {
-        return mShortcutInfo.getPackage();
+        if (useNative()) {
+            return mShortcutInfo.getPackage();
+        } else {
+            return packageName;
+        }
     }
 
     public String getId() {
-        return mShortcutInfo.getId();
+        if (useNative()) {
+            return mShortcutInfo.getId();
+        } else {
+            return id;
+        }
     }
 
     public CharSequence getShortLabel() {
-        return mShortcutInfo.getShortLabel();
+        if (useNative()) {
+            return mShortcutInfo.getShortLabel();
+        } else {
+            return shortLabel;
+        }
     }
 
     public CharSequence getLongLabel() {
-        return mShortcutInfo.getLongLabel();
+        if (useNative()) {
+            return mShortcutInfo.getLongLabel();
+        } else {
+            return longLabel;
+        }
     }
 
     public long getLastChangedTimestamp() {
-        return mShortcutInfo.getLastChangedTimestamp();
+        if (useNative()) {
+            return mShortcutInfo.getLastChangedTimestamp();
+        } else {
+            return 0;
+        }
     }
 
     public ComponentName getActivity() {
-        return mShortcutInfo.getActivity();
+        if (useNative()) {
+            return mShortcutInfo.getActivity();
+        } else {
+            return activity;
+        }
     }
 
     public UserHandle getUserHandle() {
-        return mShortcutInfo.getUserHandle();
+        if (useNative()) {
+            return mShortcutInfo.getUserHandle();
+        } else {
+            return userHandle;
+        }
     }
 
     public boolean hasKeyFieldsOnly() {
-        return mShortcutInfo.hasKeyFieldsOnly();
+        if (useNative()) {
+            return mShortcutInfo.hasKeyFieldsOnly();
+        } else {
+            return false;
+        }
     }
 
     public boolean isPinned() {
-        return mShortcutInfo.isPinned();
+        if (useNative()) {
+            return mShortcutInfo.isPinned();
+        } else {
+            return false;
+        }
     }
 
     public boolean isDeclaredInManifest() {
-        return mShortcutInfo.isDeclaredInManifest();
+        if (useNative()) {
+            return mShortcutInfo.isDeclaredInManifest();
+        } else {
+            return true;
+        }
     }
 
     public boolean isEnabled() {
-        return mShortcutInfo.isEnabled();
+        if (useNative()) {
+            return mShortcutInfo.isEnabled();
+        } else {
+            return enabled;
+        }
     }
 
     public boolean isDynamic() {
-        return mShortcutInfo.isDynamic();
+        if (useNative()) {
+            return mShortcutInfo.isDynamic();
+        } else {
+            return false;
+        }
     }
 
     public int getRank() {
-        return mShortcutInfo.getRank();
+        if (useNative()) {
+            return mShortcutInfo.getRank();
+        } else {
+            return rank;
+        }
     }
 
     public CharSequence getDisabledMessage() {
-        return mShortcutInfo.getDisabledMessage();
+        if (useNative()) {
+            return mShortcutInfo.getDisabledMessage();
+        } else {
+            return disabledMessage;
+        }
+    }
+
+    public Drawable getIcon() {
+        return icon;
     }
 
     @Override
     public String toString() {
-        return mShortcutInfo.toString();
+        if (useNative()) {
+            return mShortcutInfo.toString();
+        } else {
+            return super.toString();
+        }
+    }
+
+    public boolean useNative() {
+        return Utilities.ATLEAST_NOUGAT_MR1 && mShortcutInfo != null;
     }
 }

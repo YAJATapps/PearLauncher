@@ -24,7 +24,8 @@
     android:orientation="vertical"
     launcher:revealBackground="@drawable/round_rect_primary">
 
-    <View
+
+    <com.android.launcher3.allapps.AllAppsBackground
         android:id="@+id/reveal_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

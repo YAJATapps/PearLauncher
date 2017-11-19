@@ -24,6 +24,7 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 
 import com.android.launcher3.BubbleTextView;
+import com.android.launcher3.Launcher;
 import com.android.launcher3.R;
 import com.android.launcher3.Utilities;
 
@@ -78,6 +79,6 @@ public class DeepShortcutTextView extends BubbleTextView {
 
     @Override
     public boolean performClick() {
-        return mShouldPerformClick && super.performClick();
+        return (mShouldPerformClick || Launcher.getLauncher(getContext()).getLockWorkspace()) && super.performClick();
     }
 }

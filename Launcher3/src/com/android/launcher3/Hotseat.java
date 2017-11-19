@@ -40,6 +40,8 @@ import com.android.launcher3.logging.UserEventDispatcher;
 import com.android.launcher3.userevent.nano.LauncherLogProto.ContainerType;
 import com.android.launcher3.userevent.nano.LauncherLogProto.Target;
 import com.android.launcher3.util.Themes;
+import com.android.launcher3.blur.BlurDrawable;
+import com.android.launcher3.blur.BlurWallpaperProvider;
 
 public class Hotseat extends FrameLayout
         implements UserEventDispatcher.LogContainerProvider {
@@ -71,7 +73,8 @@ public class Hotseat extends FrameLayout
         mHasVerticalHotseat = mLauncher.getDeviceProfile().isVerticalBarLayout();
         mBackgroundColor = ColorUtils.setAlphaComponent(
                 Themes.getAttrColor(context, android.R.attr.colorPrimary), 0);
-        mBackground = new ColorDrawable(mBackgroundColor);
+             mBackground = BlurWallpaperProvider.isEnabled() ?
+                mLauncher.getBlurWallpaperProvider().createDrawable() : new ColorDrawable(mBackgroundColor);
         setBackground(mBackground);
     }
 
@@ -179,6 +182,8 @@ public class Hotseat extends FrameLayout
     }
 
     public void updateColor(ExtractedColors extractedColors, boolean animate) {
+
+        if (!(mBackground instanceof ColorDrawable)) return;
         if (!mHasVerticalHotseat) {
             int color = extractedColors.getColor(ExtractedColors.HOTSEAT_INDEX, Color.TRANSPARENT);
             if (mBackgroundColorAnimator != null) {
@@ -190,10 +195,10 @@ public class Hotseat extends FrameLayout
                 mBackgroundColorAnimator = ValueAnimator.ofInt(mBackgroundColor, color);
                 mBackgroundColorAnimator.setEvaluator(new ArgbEvaluator());
                 mBackgroundColorAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                    @Override
-                    public void onAnimationUpdate(ValueAnimator animation) {
-                        mBackground.setColor((Integer) animation.getAnimatedValue());
-                    }
+                       @Override
+                public void onAnimationUpdate(ValueAnimator animation) {
+                    ((ColorDrawable) mBackground).setColor((Integer) animation.getAnimatedValue());
+                }
                 });
                 mBackgroundColorAnimator.addListener(new AnimatorListenerAdapter() {
                     @Override
@@ -217,5 +222,47 @@ public class Hotseat extends FrameLayout
 
     public int getBackgroundDrawableColor() {
         return mBackgroundColor;
+    }
+
+ @Override
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        super.onLayout(changed, left, top, right, bottom);
+        mBoundsRect.set(0, 0, right - left, bottom - top);
+        setClipBounds(mBoundsRect);
+        if (mBackground instanceof BlurDrawable) {
+            ((BlurDrawable) mBackground).setTranslation(top);
+        }
+    }
+
+    public void setWallpaperTranslation(float translation) {
+        ((BlurDrawable) mBackground).setTranslation(translation);
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        if (mBackground instanceof BlurDrawable) {
+            ((BlurDrawable) mBackground).startListening();
+        }
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        if (mBackground instanceof BlurDrawable) {
+            ((BlurDrawable) mBackground).stopListening();
+        }
+    }
+
+    public void setOverscroll(float progress) {
+        if (mBackground instanceof BlurDrawable) {
+            ((BlurDrawable) mBackground).setOverscroll(progress);
+        }
+    }
+
+    @Override
+    public void setTranslationX(float translationX) {
+        super.setTranslationX(translationX);
+        mLauncher.mHotseat.setOverscroll(translationX);
     }
 }

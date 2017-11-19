@@ -66,6 +66,8 @@ import com.android.launcher3.UninstallDropTarget.DropTargetSource;
 import com.android.launcher3.Utilities;
 import com.android.launcher3.Workspace.ItemOperator;
 import com.android.launcher3.accessibility.AccessibleDragListenerAdapter;
+import com.android.launcher3.blur.BlurDrawable;
+import com.android.launcher3.blur.BlurWallpaperProvider;
 import com.android.launcher3.config.FeatureFlags;
 import com.android.launcher3.config.ProviderConfig;
 import com.android.launcher3.dragndrop.DragController;
@@ -150,6 +152,8 @@ public class Folder extends AbstractFloatingView implements DragSource, View.OnC
     private View mFooter;
     private int mFooterHeight;
 
+    private BlurDrawable mBlurDrawable;
+
     // Cell ranks used for drag and drop
     @Thunk int mTargetRank, mPrevTargetRank, mEmptyCellRank;
 
@@ -212,6 +216,17 @@ public class Folder extends AbstractFloatingView implements DragSource, View.OnC
         // name is complete, we have something to focus on, thus hiding the cursor and giving
         // reliable behavior when clicking the text field (since it will always gain focus on click).
         setFocusableInTouchMode(true);
+
+        if (BlurWallpaperProvider.isEnabled()) {
+            int tintColor = ContextCompat.getColor(mLauncher, R.color.folderBgColorBlur);
+
+            mBlurDrawable = BlurWallpaperProvider.getInstance().createDrawable(
+                    res.getDimensionPixelSize(R.dimen.blur_size_medium_outline), false);
+            mBlurDrawable.setBlurredView(mLauncher.getWorkspace());
+            mBlurDrawable.setShouldProvideOutline(true);
+            mBlurDrawable.setOverlayColor(tintColor);
+            setBackground(mBlurDrawable);
+        }
     }
 
     @Override
@@ -403,6 +418,8 @@ public class Folder extends AbstractFloatingView implements DragSource, View.OnC
         // the folder itself.
         requestFocus();
         super.onAttachedToWindow();
+   if (mBlurDrawable != null)
+            mBlurDrawable.startListening();
     }
 
     @Override
@@ -1442,6 +1459,22 @@ public class Folder extends AbstractFloatingView implements DragSource, View.OnC
         getHitRect(outRect);
         outRect.left -= mScrollAreaOffset;
         outRect.right += mScrollAreaOffset;
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        if (mBlurDrawable != null)
+            mBlurDrawable.stopListening();
+    }
+
+    @Override
+    protected void onLayout(boolean changed, int l, int t, int r, int b) {
+        super.onLayout(changed, l, t, r, b);
+        if (mBlurDrawable == null) return;
+        mBlurDrawable.setOverscroll(l);
+        mBlurDrawable.setTranslation(t);
+        mBlurDrawable.invalidateSelf();
     }
 
     @Override
