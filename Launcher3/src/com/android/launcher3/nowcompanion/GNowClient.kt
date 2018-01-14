@@ -356,4 +356,14 @@ class GNowClient(private val launcher: Launcher) : ILauncherClient {
             `package` = PROXY_PACKAGE
         }
     }
+
+
+        fun getEnabledState(context: Context): Int {
+            var state = 0
+            if (!PackageManagerHelper.isAppEnabled(context.packageManager, "com.google.android.googlequicksearchbox", 0))
+                state = state or 1
+            if (!PackageManagerHelper.isAppEnabled(context.packageManager, PearNowClient.PROXY_PACKAGE, 0))
+                state = state or 2
+            return state
+        }
 }

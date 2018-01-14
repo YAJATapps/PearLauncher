@@ -1,19 +1,19 @@
 package com.android.launcher3;
 
 import com.android.launcher3.Launcher.LauncherOverlay;
-import com.android.launcher3.nowcompanion.ILauncherClient;
+import com.android.launcher3.nowcompanion.GNowClient;
 
 public class LauncherTab {
 
-    private ILauncherClient mLauncherClient;
+    private GNowClient mLauncherClient;
 
     public LauncherTab(Launcher launcher) {
-        mLauncherClient = ILauncherClient.Companion.create(launcher);
+        mLauncherClient = new GNowClient(launcher);
 
         launcher.setLauncherOverlay(new LauncherOverlays());
     }
 
-    protected ILauncherClient getClient() {
+    protected GNowClient getClient() {
         return mLauncherClient;
     }
 
