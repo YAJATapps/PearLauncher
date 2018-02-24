@@ -1,3 +1,8 @@
 # PearLauncher Pro Features
-Experimental badges on marshmallow and above.
-some gestures.Swipe up two fingers, Swipe down two fingers
+
+Badges customisations
+Change badge style (dots or count)
+Change badge position
+Extract badge color from app icon
+some gestures. Swipe up two fingers, Swipe down two fingers
+Proximity and shake gestures
