@@ -1,5 +1,6 @@
 # PearLauncher Pro Features
 
+To have more than 10 apps in drawer folders
 Badges customisations
 Change badge style (dots or count)
 Change badge position
