@@ -1,4 +1,6 @@
-# PearLauncher
-Some opensource components and for hosting apks
+THIS REPO WILL BE DELETED SOON
 
-This repo will be deleted in 2018
+#PearLauncher
+Some opensource components and for hosting apk
+
+This repo will be deleted this month
